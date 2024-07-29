@@ -11,15 +11,21 @@ import {SIG_VALIDATION_FAILED, SIG_VALIDATION_SUCCESS} from "../../lib/account-a
 import {IEntryPoint} from "../../lib/account-abstraction/contracts/interfaces/IEntryPoint.sol";
 
 contract MinimalAccount is IAccount, Ownable {
-    //////////////// Errors
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
     error MinimalAccount__NotFromEntryPoint();
-    error MinimalAccount__NotFromENtryPointOrOwner();
-    error MinimalAccount__CallFailed(bytes);
+    error MinimalAccount__NotFromEntryPointOrOwner();
+    error MiniamlAccount__CallFailed(bytes);
 
-    //////////////// State Variables
-
+    /*//////////////////////////////////////////////////////////////
+                            STATE VARIABLES
+    //////////////////////////////////////////////////////////////*/
     IEntryPoint private immutable i_entryPoint;
 
+    /*//////////////////////////////////////////////////////////////
+                               MODIFIERS
+    //////////////////////////////////////////////////////////////*/
     modifier requireFromEntryPoint() {
         if (msg.sender != address(i_entryPoint)) {
             revert MinimalAccount__NotFromEntryPoint();
@@ -29,19 +35,23 @@ contract MinimalAccount is IAccount, Ownable {
 
     modifier requireFromEntryPointOrOwner() {
         if (msg.sender != address(i_entryPoint) && msg.sender != owner()) {
-            revert MinimalAccount__NotFromENtryPointOrOwner();
+            revert MinimalAccount__NotFromEntryPointOrOwner();
         }
         _;
     }
 
+    /*//////////////////////////////////////////////////////////////
+                               FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
     constructor(address entryPoint) Ownable(msg.sender) {
         i_entryPoint = IEntryPoint(entryPoint);
     }
 
-    ///////////////// Internal Functions
+    receive() external payable {}
 
-    ///////////////// External Functions
-
+    /*//////////////////////////////////////////////////////////////
+                           EXTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
     function execute(
         address dest,
         uint256 value,
@@ -51,10 +61,11 @@ contract MinimalAccount is IAccount, Ownable {
             functionData
         );
         if (!success) {
-            revert MinimalAccount__CallFailed(result);
+            revert MiniamlAccount__CallFailed(result);
         }
     }
 
+    // A signature is valid, if it's the MinimalAccount owner
     function validateUserOp(
         PackedUserOperation calldata userOp,
         bytes32 userOpHash,
@@ -65,6 +76,10 @@ contract MinimalAccount is IAccount, Ownable {
         _payPrefund(missingAccountFunds);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                           INTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+    // EIP-191 version of the signed hash
     function _validateSignature(
         PackedUserOperation calldata userOp,
         bytes32 userOpHash
@@ -89,6 +104,9 @@ contract MinimalAccount is IAccount, Ownable {
         }
     }
 
+    /*//////////////////////////////////////////////////////////////
+                                GETTERS
+    //////////////////////////////////////////////////////////////*/
     function getEntryPoint() external view returns (address) {
         return address(i_entryPoint);
     }
